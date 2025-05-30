@@ -1,4 +1,12 @@
 
+
+"""
+
+Deprecated DP method to select supplies from a given order such that the net weight is lower than the full fuel payload of the given plane; akin to the Knapsack Problem
+
+"""
+
+
 from supply import SupplyOrder, Supplies, SUPPLY_WEIGHT, SUPPLY_COST
 
 CONVERSION_TO_INT = 100

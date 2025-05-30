@@ -9,6 +9,13 @@ To calculate the 'taxi-cab' or 'Manhattan' distance between towns (non-zero entr
 from matrix import Matrix
 from os.path import join, dirname
 
+def get_edge(edges, s):
+    if s in edges:
+        return edges[s]
+    if s[::-1] in edges:
+        return edges[s[::-1]]
+
+
 def generate_nodes(filename: str = "locations.txt") -> list[str]:
     
     with open(join(dirname(__file__), filename), "r") as f:
@@ -20,7 +27,7 @@ def generate_nodes(filename: str = "locations.txt") -> list[str]:
         s = location.split()
         if len(s) < 2: continue
 
-        name = " ".join(s[2:])
+        name = " ".join(s[2:-1])
         names.append(name)
 
     return names
@@ -41,7 +48,8 @@ def generate_edges(filename: str = "locations.txt") -> dict[tuple, int]:
         if len(s) < 2: continue
 
         pair = [int(s[0][:-1]), int(s[1])]
-        name = " ".join(s[2:])
+        name = " ".join(s[2:-1])
+        postcode = s[-1]
         
         grid[*pair] = name
         locations[name] = pair
@@ -57,7 +65,7 @@ def generate_edges(filename: str = "locations.txt") -> dict[tuple, int]:
             x2, y2 = locations[dest]
             taxicab_distance = abs(x1 - x2) + abs(y1 - y2)
 
-            edges[(start, dest)] = taxicab_distance
+            edges[(start, dest)] = taxicab_distance * 36.5
 
     return edges
 
@@ -65,5 +73,9 @@ if __name__ == "__main__":
 
     print("Nodes:")
     print(generate_nodes())
-    print("Edges:")
-    print(generate_edges())
+
+    u, v = ("Perth", "Esperance")
+
+    print(f"Edge: {u, v}")
+    e = generate_edges()
+    print(get_edge(e, (u, v)))

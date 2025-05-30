@@ -5,18 +5,13 @@ To settle the assumption that orders can contain supplie quantities greater than
 
 """
 
-NET_WEIGHT = 12500.0
-C1 = 1381.0
-C2 = C1 * 1.5
-
-SMALLER_PLANE = f"Smaller Plane: {C1}kg"
-LARGER_PLANE  = f"Larger Plane: {C2}kg"
+from constants import SMALLER_PLANE, LARGER_PLANE, C1, C2
 
 def determine_planes ( net_weight ):
     # Alternate planes to simultaneously complete orders.
     # Only use larger plane if remaining weight is in [C2, 2 * C1]
 
-    print(f"Sequence for {net_weight}kg order")
+    print(f"Sequence for {net_weight} kg order")
     
     remaining_weight = net_weight
     

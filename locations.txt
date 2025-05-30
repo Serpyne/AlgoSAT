@@ -1,14 +1,14 @@
-    18, 4 Exmouth
-    14, 14 Port Hedland
-    8, 23 Broome
-    6, 25 Derby
-    10, 30 Fitzroy Crossing
-    9, 34 Halls Creek
-    3, 36 Wyndham
-    4, 37 Kununurra
-    25, 3 Monkey Mia
-    35, 4 Geraldton
-    43, 5 Perth
-    51, 13 Albany
-    48, 21 Esperance
-    39, 20 Kalgoorie
+    18, 4 Exmouth 6707
+    14, 14 Port Hedland 6721
+    8, 23 Broome 6725
+    6, 25 Derby 6728
+    10, 30 Fitzroy Crossing 6765
+    9, 34 Halls Creek 6770
+    3, 36 Wyndham 6740
+    4, 37 Kununurra 6743
+    25, 3 Monkey Mia 6537
+    35, 4 Geraldton 6530
+    43, 5 Perth 6000
+    51, 13 Albany 6330
+    48, 21 Esperance 6450
+    39, 20 Kalgoorlie 6430

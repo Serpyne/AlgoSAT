@@ -15,9 +15,10 @@ if __name__ == "__main__":
         if len(s) < 2: continue
 
         pair = [int(s[0][:-1]), int(s[1])]
-        name = " ".join(s[2:])
+        name = " ".join(s[2:-1])
+        postcode = s[-1]
         
-        grid[*pair] = name
+        grid[*pair] = postcode
 
     print(grid)
 

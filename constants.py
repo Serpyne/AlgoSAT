@@ -1,7 +1,5 @@
 
 
-
-NET_WEIGHT = 12_500.0
 C1 = 1_381.0         # kg, Full Fuel Load
 C2 = C1 * 1.5       # kg
 UFV1 = 2_725         # Litres, Usable Fuel Volume

@@ -54,37 +54,41 @@ class Supplies:
             count = self._supplies[supply]
             s += f"{count}x {supply}, "
         return s[:-2]
+    def __repr__(self) -> str:
+        return str(self)
     
     def dict(self) -> dict:
         return self._supplies
     
-    def add(self, supply: str, count: int):
-        supply = "".join(supply.lower().split())
-        if supply not in SUPPLY_NAMES:
+    def add(self, supply_concat: str, count: int):
+        supply_concat = "".join(supply_concat.lower().split())
+        if supply_concat not in SUPPLY_NAMES:
             return
-        setattr(self, supply, count)
-        supply = SUPPLY_NAMES[supply]
+        supply = SUPPLY_NAMES[supply_concat]
         self.net_weight += SUPPLY_WEIGHT[supply] * count
         self.net_value += SUPPLY_COST[supply] * count
         if supply in self._supplies:
             self._supplies[supply] += count
+            setattr(self, supply_concat, self._supplies[supply])
             return
         self._supplies[supply] = count
+        setattr(self, supply_concat, count)
 
     def remove(self, supply: str, count: int):
-        supply = "".join(supply.lower().split())
-        if supply not in SUPPLY_NAMES:
+        supply_concat = "".join(supply.lower().split())
+        if supply_concat not in SUPPLY_NAMES:
             return
-        if SUPPLY_NAMES[supply] not in self._supplies:
+        if SUPPLY_NAMES[supply_concat] not in self._supplies:
             return
-        setattr(self, supply, count)
-        supply = SUPPLY_NAMES[supply]
+        setattr(self, supply_concat, count)
+        supply = SUPPLY_NAMES[supply_concat]
         self._supplies[supply] -= count
         self.net_weight -= SUPPLY_WEIGHT[supply] * count
         self.net_value -= SUPPLY_COST[supply] * count
 
     def copy(self) -> "Supplies":
-        return Supplies(**self._supplies)
+        s = {value: key for key, value in SUPPLY_NAMES.items()}
+        return Supplies(**{s[name]: self._supplies[name] for name in self._supplies})
 
 class SupplyOrder:
     def __init__(self, **kwargs):
@@ -114,4 +118,4 @@ class SupplyOrder:
         return supply in self.supplies._supplies
 
     def copy(self) -> "SupplyOrder":
-        return SupplyOrder(town=self.town, supplies=self.supplies)
+        return SupplyOrder(town=self.town, supplies=self.supplies.copy())

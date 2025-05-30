@@ -1,8 +1,11 @@
 """
+subroutine determine_route
 Inputs:
-- ~~Destination (T)~~ (OMITTED)
-- Edge weights (Distance between destination)
-- Orders [Location, Net Weight]
+- F: Max fuel capacity
+- W0: Weight of plane without any inventory or fuel on-board
+- C: Full fuel payload capacity of plane
+- source: [optional]
+- orders'list': List of SupplyOrder(s) (A custom ADT containing town and supplies). 
 """
 
 from typing import Union
@@ -10,7 +13,8 @@ from math import log, exp
 
 from taxicab_distances import generate_nodes, generate_edges
 from supply import SupplyOrder, Supplies
-from constants import C1, C2, UFV1, UFV2, EMPTY_WEIGHT_1, EMPTY_WEIGHT_2, MARKET_FUEL_COST_PER_LITRE
+from constants import C1, C2, UFV1, UFV2, EMPTY_WEIGHT_1, EMPTY_WEIGHT_2, MARKET_FUEL_COST_PER_LITRE, SMALLER_PLANE, LARGER_PLANE
+from select_maximum_supplies import select_maximum_of_supplies
 
 nodes = generate_nodes()
 edges = generate_edges()
@@ -55,7 +59,7 @@ def choose_order_index_by_town(orders: list[SupplyOrder], town: str) -> int:
             return i
     return None
 
-def determine_route(F: int, W0: int, C: int, source: str = "Perth",  orders: list[SupplyOrder] = None) -> Union[list[str], list[int], list[list[SupplyOrder]], int, int]:
+def determine_route(F: int, W0: int, source: str = "Perth",  orders: list[SupplyOrder] = None) -> Union[list[str], list[int], list[list[SupplyOrder]], int, int]:
 
     if orders is None:
         print("No orders today - You can go off work!")
@@ -100,10 +104,6 @@ def determine_route(F: int, W0: int, C: int, source: str = "Perth",  orders: lis
             NEW_W = W - delta_W
             rem = f(v, source, W0 + NEW_W)
 
-            if W > C:
-                
-                continue
-
             if fT + aux + rem > F: continue
 
             if aux >= fmin: continue
@@ -124,28 +124,15 @@ def determine_route(F: int, W0: int, C: int, source: str = "Perth",  orders: lis
 
     # Complete the circuit by appending the source node 
     path.append(source)
+    path_orders.append(None)
 
     fuel_usage = f(path[-2], path[-1], W0)
     fT += fuel_usage
     path_fuel_usages.append(fuel_usage)
 
-    return path, path_fuel_usages, path_orders, fT, W
+    return path, path_fuel_usages, path_orders, fT, W, orders
 
-if __name__ == "__main__":
-    plane = "Small"
-    F = UFV1
-
-    path, path_fuel_usages, path_orders, fT, W = determine_route(F = UFV1, W0 = EMPTY_WEIGHT_1, C = C1,
-                                                                 orders=[
-        # SupplyOrder(town = "Esperance", supplies = Supplies(scalpel = 1)),
-        SupplyOrder(town = "Geraldton", supplies = Supplies(dialysismachine = 10)),
-        # SupplyOrder(town = "Monkey Mia", supplies = Supplies(stitches = 100, sticker = 10000)),
-        # SupplyOrder(town = "Wyndham", supplies = Supplies(dialysismachine = 1)),
-        # SupplyOrder(town = "Broome", supplies = Supplies(sticker = 500)),
-    ])
-    
-    # Display the final route to you, the Flight Discharge Officer.
-
+def display(path_orders, path_fuel_usages, C):
     net_value: float = 0
     net_expenses = fT * MARKET_FUEL_COST_PER_LITRE
     net_weight: float = 0
@@ -153,8 +140,8 @@ if __name__ == "__main__":
     output_lines: list[tuple] = [
         ("Plane", plane),
         ("Initial Payload", ""),
-        ("Full Fuel Payload", f"{float(C1)} kg"),
-        ("Fuel Capacity", f"{float(F)} L"),
+        ("Full Fuel Payload", f"{float(C):.3f} kg"),
+        ("Fuel Capacity", f"{float(F):.2f} L"),
         ("Flight Route (Beginning at Perth)", ()),
         ("Total Fuel Consumed", f"{fT:.2f} L"),
         ("Net Order Value", ""),
@@ -181,6 +168,7 @@ if __name__ == "__main__":
         n = 1
         while n < len(path) - 1:
             order: SupplyOrder = path_orders[n - 1]
+            if order is None: n += 1; continue
             net_value += order.supplies.net_value
             net_weight += order.supplies.net_weight
             n += 1
@@ -196,7 +184,7 @@ if __name__ == "__main__":
         if type(args) != tuple:
             if "Value" in s:        args = f"{net_value:.2f} AUD"
             elif "Profit" in s:     args = f"{net_value - net_expenses:.2f} AUD"
-            elif "Initial Payload" in s:     args = f"{net_weight:.2f} kg"
+            elif "Initial Payload" in s:     args = f"{net_weight:.3f} kg"
             print(f"{s} {args}")
             continue
 
@@ -204,8 +192,9 @@ if __name__ == "__main__":
         n = 1
         while n < len(path) - 1:
             order: SupplyOrder = path_orders[n - 1]
+            if order is None: n += 1; continue
             print(f"{n}.   {order.town}")
-            print(f"{(lead_spacing + 'Weight:').ljust(trailing_padding)}    {order.supplies.net_weight:.2f} kg")
+            print(f"{(lead_spacing + 'Weight:').ljust(trailing_padding)}    {order.supplies.net_weight:.3f} kg")
             print(f"{(lead_spacing + 'Value:').ljust(trailing_padding)}    {order.supplies.net_value:.2f} AUD")
             print(f"{(lead_spacing + 'Fuel Usage:').ljust(trailing_padding)}    {path_fuel_usages[n - 1]:.2f} L")
             print(f"{(lead_spacing + 'Supplies:').ljust(trailing_padding)}    {order.supplies}")
@@ -216,3 +205,54 @@ if __name__ == "__main__":
         print(f"{'      Fuel Usage:'.ljust(trailing_padding)}    {path_fuel_usages[n - 1]:.2f} L")
 
     print()
+
+if __name__ == "__main__":
+
+    orders = [
+        SupplyOrder(town = "Exmouth", supplies = Supplies(stitches = 10)),
+        SupplyOrder(town = "Monkey Mia", supplies = Supplies(dialysismachine = 20)),
+        SupplyOrder(town = "Broome", supplies = Supplies(nitrousoxidecanister = 30)),
+        SupplyOrder(town = "Derby", supplies = Supplies(soap = 40)),
+        SupplyOrder(town = "Esperance", supplies = Supplies(scalpel = 50)),
+        SupplyOrder(town = "Wyndham", supplies = Supplies(syringe = 60)),
+        SupplyOrder(town = "Albany", supplies = Supplies(masks = 70)),
+        SupplyOrder(town = "Port Hedland", supplies = Supplies(vaccinationkit = 80)),
+        SupplyOrder(town = "Fitzroy Crossing", supplies = Supplies(stethoscope = 90)),
+        SupplyOrder(town = "Halls Creek", supplies = Supplies(bandages = 100)),
+        SupplyOrder(town = "Geraldton", supplies = Supplies(sanitiser = 110)),
+    ]
+    
+    previous_plane = LARGER_PLANE
+
+    added_count = 0
+    for i, order in enumerate(orders.copy()):
+        C = [C1, C2][int((i + added_count + int(previous_plane == SMALLER_PLANE)) % 2)]
+        if order.net_weight > C:
+            i += added_count
+
+            order = orders[i]
+            new, remainder = select_maximum_of_supplies(C, order)
+            orders[i] = new
+            orders.insert(i + 1, remainder)
+            added_count += 1
+
+    while len(orders) > 0:
+        if previous_plane == LARGER_PLANE:
+            previous_plane = SMALLER_PLANE
+            plane = "Small"
+            F = UFV1
+            C = C1
+            EW = EMPTY_WEIGHT_1
+        else:
+            previous_plane = LARGER_PLANE
+            plane = "Large"
+            F = UFV2
+            C = C2
+            EW = EMPTY_WEIGHT_2
+
+        path, path_fuel_usages, path_orders, fT, W, orders = determine_route(F = UFV1,
+                                                                             W0 = EW,
+                                                                             orders=orders)
+
+        # Display the final route to you, the Flight Discharge Officer.
+        display(path_orders, path_fuel_usages, C)

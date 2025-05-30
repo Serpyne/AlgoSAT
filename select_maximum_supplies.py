@@ -1,82 +1,81 @@
+"""
+
+DP approach to select supplies from a given order to fit under the max full fuel payload of a given plane.
+This is an upgrade from the previous deprecated version.
+
+"""
+
 
 from supply import SupplyOrder, Supplies, SUPPLY_WEIGHT, SUPPLY_COST
 
-CONVERSION_TO_INT = 100
-
-def selectMaximumOfSupplies(W: float, order: SupplyOrder):
+def select_maximum_of_supplies(W: float, order: SupplyOrder):
     """
     W: maximum capcity/weight in kg
     order: {supplies: count}
 
     Returns the SupplyOrder ADT of SupplyOrder{town = "...", supplies = selected_count}.
     """
-    
-    supplies = orders[0].dict()
+
+    supplies = order.dict()
 
     names = list(supplies.keys())
     counts = list(supplies.values())
     weights = [SUPPLY_WEIGHT[supply] for supply in names]
     values = [SUPPLY_COST[supply] for supply in names]
+    n = len(weights)
 
-    W_scaled = int(W * CONVERSION_TO_INT)
-    weights_scaled = [int(w * CONVERSION_TO_INT) for w in weights]
+    def dfs(capacity: float, idx: int, selected: Supplies, memo: dict = {}):
+        # Use a tuple for memoization key (capacity and idx)
+        # Round function to avoid floating point precision issues in key
+        key = (round(capacity, 6), idx) 
+        if key in memo:
+            return memo[key]
+        if idx == n or capacity <= 0:
+            return (0.0, selected.copy())
+        
+        # Option 1: Skip current item
+        max_val, best_selected = dfs(capacity, idx + 1, selected)
 
-    # 2D table where first column is the maximum value of the given supplies
-    # and the second column is its corresponding list of items.
-    dp = [[(0.0, Supplies()) for _ in range(W_scaled + 1)] for _ in range(len(weights) + 1)]
+        # Option 2: Try to take 1 to counts[idx] of current item
+        max_take = min(counts[idx], int(capacity / weights[idx])) if weights[idx] > 0 else 0
+        for k in range(1, max_take + 1):
+            rem_cap = capacity - k * weights[idx]
+            if rem_cap >= 0:
+                new = selected.copy()
+                name = "".join(names[idx].lower().split())
+                if names[idx] in new:
+                    new[name] += k
+                else:
+                    new[name] = k
+                val, sel = dfs(rem_cap, idx + 1, new)
+                if val + k * values[idx] > max_val:
+                    max_val = val + k * values[idx]
+                    best_selected = sel.copy()
 
-    for i in range(1, len(weights) + 1): # Each supply 
-        for w in range(1, W_scaled + 1): # Each supply capacity
-            
-            # Standard case: Do not carry the supply
-            dp[i][w] = dp[i - 1][w]
+        memo[key] = (max_val, best_selected)
+        return (max_val, best_selected)
 
-            # Calculate the maximum number that this supply can fit
-            max_count = min(counts[i - 1], w // weights_scaled[i - 1])
+    max_value, selected_names = dfs(W, 0, {})
 
-            # Iterate through [1, 2, ..., max_count]
-            for k in range(1, max_count + 1):
-                remaining = w - k * weights_scaled[i - 1]
-                if remaining >= 0:
-                    prev_val, items = dp[i-1][remaining]
-                    new_val = prev_val + k * values[i - 1]
-                    new_items = items.copy()
-                    new_items.add(names[i - 1], k)
-
-                    # Update the table if taking k number of supplies is more optimal
-                    if new_val > dp[i][w][0]:
-                        dp[i][w] = (new_val, new_items)
-
-    _, selected_names = dp[len(weights)][W_scaled]
-
-    new_order = order.copy()
-    new_order.supplies = selected_names
     remaining_order = order.copy()
-    s = selected_names.dict()
-    for supply in s:
-        count = s[supply]
+    new_order = order.copy()
+    new_order.supplies._supplies.clear()
+    new_order.supplies.net_weight = 0
+    for supply in selected_names:
+        count = selected_names[supply]
+        new_order.supplies.add(supply, count)
         remaining_order.supplies.remove(supply, count)
 
     return new_order, remaining_order
 
 if __name__ == "__main__":
+
+    order = SupplyOrder(town = "Geraldton", supplies = Supplies(dialysismachine = 15, scalpel = 1))
+
+    W = 1381.0 # kg
     
-    orders = [
-        # SupplyOrder(town = "Esperance", supplies = Supplies(scalpel = 1)),
-        SupplyOrder(town = "Geraldton", supplies = Supplies(dialysismachine = 0, scalpel = 5)),
-        # SupplyOrder(town = "Monkey Mia", supplies = Supplies(stitches = 100, sticker = 10000)),
-        # SupplyOrder(town = "Wyndham", supplies = Supplies(dialysismachine = 1)),
-        # SupplyOrder(town = "Broome", supplies = Supplies(vaccinationkit = 10)),
-    ]
-
-    W = 1381
-    
-    for order in orders:
-
-        new, remaining = selectMaximumOfSupplies(W, order)
-        print("New Order:", new.supplies)
-        print("Remaining Order:", remaining.supplies)
-        print(new.is_empty(), remaining.is_empty())
-        print(new.net_weight, remaining.net_weight)
-        print(new.net_value, remaining.net_value)
-
+    new, remaining = select_maximum_of_supplies(W, order)
+    print("New Order:", new.supplies)
+    print("Remaining Order:", remaining.supplies)
+    print(order.net_weight, new.net_weight)
+    print(order.net_weight, remaining.net_weight)

@@ -74,8 +74,10 @@ if __name__ == "__main__":
     print("Nodes:")
     print(generate_nodes())
 
-    u, v = ("Perth", "Esperance")
-
-    print(f"Edge: {u, v}")
     e = generate_edges()
-    print(get_edge(e, (u, v)))
+
+    s = ["Exmouth", "Monkey Mia", "Broome", "Derby", "Esperance"]
+    for x in s:
+        u, v = ("Perth", x)
+        print(f"Edge: {u, v}")
+        print(get_edge(e, (u, v)))
